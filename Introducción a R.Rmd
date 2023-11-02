@@ -1,0 +1,140 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Introducción al curso.
+
+Para este curso estaremos utilizando datos relacionados con homicidios con armas de fuego en estados unidos.
+
+## Introducción a R.
+
+R no fue creado por ingenieros de software. Más bien fue creado por estadísticos para trabajar de manera interactiva para análisis de datos.
+
+### Características importantes:
+
+-   Acceso libre.
+
+-   Múltiples plataformas.
+
+-   Comunidad que ayuda y agrega nuevas librerías.
+
+## Habilidades de R.
+
+Son muchas, pero las que vienen por defecto son las básicas. Se pueden instalar las librerías desde Rstudio con install.package("paquete"). Luego cargarlas con library(paquete)
+
+podemos instalar varios paquetes en un comando:
+
+```{r}
+install.packages(c("dslabs", "tidyverse")
+```
+
+También se puede usar desde el menú desplegable tools. Allí la ventaja es que se puede recordar el nombre, en caso de que se haya olvidado.
+
+Es útil tener un script con todos los paquetes que se suelen usar, para que, en caso de que se necesite hacer una instalación nueva, se pueda descargar fácilmente.
+
+## Primer fragmento de código
+
+```{r}
+library(dslabs)
+library(tidyverse)
+
+data(murders)
+
+murders%>%
+  ggplot(aes(population, total, label = abb, color = region))+
+  geom_label()
+  
+```
+## Tipos de datos
+Hay varios tipos de datos. Por ejemplo, caracteres, números, tablas, etc. 
+La función classs ayuda a identificar el tipo de datos:
+```{r}
+a <- 2
+class(a)
+class(ls)
+```
+
+### Dataframes
+
+Son la manera más común de guardar datos en R. Son útiles porque permiten guardar información de muchos tipos (texto, números, fechas, etc)
+
+```{r}
+library(dslabs)
+data("murders")
+class(murders)
+```
+la función str muestra la estructura de un objeto: 
+```{r}
+str(murders)
+```
+
+Como se ve en el ejemplo, murders es un dataframe con 51 observaciones en 5 variables. 
+las variables state y abb son de texto. La de región es de factor con cuatro niveles, la population y total son numéricas. Muestra los primeros datos de cada variable. 
+
+
+También podemos ver las seis primeras líneas del data frame:
+```{r}
+head(murders)
+```
+Para acceder a las variables, usamos el símbolo de dolar: 
+```{r}
+murders$population
+```
+Para conocer el nombre de las columnas, podemos usar la función names: 
+```{r}
+names(murders)
+```
+
+### Vectores
+
+Los vectores son conjuntos de variables de la misma clase, por ejemplo, en murders$population. Aunque aparece que es numérico, cuando hablamos de conjuntos de variables, hablamos de vectores. Aunque sólo sea un número asignado a la variable. 
+
+```{r}
+class(murders$population)
+```
+
+La función length devuelve cuántas observaciones hay: 
+```{r}
+length(murders$population)
+```
+ Hay 51 observaciones. 
+
+### Factores
+
+Por ejemplo en murders$regions son útiles para guardar datos categóricos. Podemos ver los niveles con la función levels:
+```{r}
+levels(murders$region)
+```
+Los factores son muy útiles para ahorrar memoria, pues en vez de el texto se guarda el entero. 
+También son fuente de confusión porque fácilmente se pueden confundir con caracteres. 
+Se recomienda evitar factores al máximo, excepto si se hacen análisis estadísticos que dependen de datos categóricos. 
+
+### corchetes vs extractor $
+Si usamos los corchetes para extraer una variable, en lugar del $, ya no nos lo extraerá como vector sino como dataframe. 
+```{r}
+class(murders$abb)
+```
+
+```{r}
+class(murders["abb"])
+```
+
+Si corremos la función "identical", nos daremos cuenta que no son lo mismo: 
+```{r}
+identical(murders$abb, murders["abb"])
+```
+
+Sin embargo, si uso doble [[]], obtendré también el vector, tal como si hubiéramos usado el extractor: 
+
+```{r}
+identical(murders$abb, murders[["abb"]])
+```
+
+### función table
+la función table toma un vector y muestra la frecuencia de cada valor único:
+```{r}
+table(murders$region)
+```
+^
+(-b+sqrt(b^2-4*a*c))/(2*a)

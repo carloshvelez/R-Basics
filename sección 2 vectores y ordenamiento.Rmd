@@ -1,0 +1,178 @@
+---
+title: "Sección 2. Vectores y ordenamiento"
+---
+
+# Sección 2. Vectores y ordenamiento
+
+## vectores
+
+Los vectores son las unidades de almacenamiento de datos más básicas disponibles en R.
+
+Los datasets más complejos usualmente se dividen en componentes que son vectores.
+
+En el dataframe de murders, cada columna es un vector. Eso es lo usual.
+
+Contienen: números, o caracteres, o lógicos (True, False)
+
+### Crear vectores
+
+La manera más sencilla es usar la función de concatenar, c().
+
+```{r}
+vector_1<- c(32, 34, 56, 45)
+class(vector_1)
+```
+
+### Nombrar entradas de un vector
+
+A menudo es útil nombrar las entradas de un vector. Esto no cambiará su clase. Por ejmplo:
+
+```{r}
+vector_2 <-c(egipto=32, colombia=34, méxico = 56, india = 45)
+```
+
+Podemos usar la función names para nombrar las entradas. Por ejemplo:
+
+```{r}
+paises <- c("Egipto", "Colombia", "México", "India")
+names(vector_1) <- paises
+vector_1
+```
+
+### seq () para crar vectores.
+
+Otra función para crear funciones usada frecuentemente es seq(), la cual crea una secuencia de números.
+
+```{r}
+vector3 <- seq(1,25)
+vector3
+```
+
+Si queremos secuencias consecutivas, se puede usar la forma corta x:y
+
+```{r}
+vector_4 <- 1:35
+vector_4
+```
+
+### Subsetting
+Para acceder a elementos de los vectores, usamos corchetes:
+```{r}
+vector_1[1:2]
+```
+Si queremos acceder a varios elementos particulares, usamos corchetes y concatenar
+```{r}
+vector_1[c(1,3)]
+```
+Si los elementos tienen nombre, podemos acceder usando los nombres: 
+```{r}
+vector_1["Egipto"]
+```
+```{r}
+vector_1[c("Egipto", "India")]
+```
+
+### Coerción de vectores
+La coerción es un intento de R para ser flexible con los tipos de datos. Cuando una entrada no se ajusta a lo esperado, R trata de suponer a qué nos referíamos antes de lanzar el error. 
+Sin embargo, esto puede dar lugar a confusión. 
+Si no se comprende la coerción, puede haber lugar para las confusiones. 
+
+Por ejemplo, todos los datos de un vector deben ser del mismo tipo, pero si asignamos varios tipos de datos en un vector, r lo permite: 
+```{r}
+vector_5 <- c(1, "Canadá", 3)
+vector_5
+```
+Aqué la cuestión es que R en efecto creó el vector, pero los números los convirtió en texto, por lo tanto no se puede esperar hacer cálculos con esto. 
+Aquí R coercionó los números para convertirlos en caracteres. 
+
+
+Podemos hacer coerción nosotros con la función as.character()
+```{r}
+vector_6 <- 1:12
+vector_7 <- as.character(vector_6)
+vector_7
+```
+
+Podemos hacer lo opuesto: 
+```{r}
+vector_8 <- as.numeric(vector_7)
+```
+
+### Datos perdidos. 
+
+Los datos perdidos son muy comunes. En R estos se representan como NA. 
+Si R trata de coercinar algo, pero no lo logra, aparecerán datos perdidos, con una advertencia. Por ejemplo: 
+
+```{r}
+vector_9 <- as.numeric(vector_5)
+vector_9
+```
+
+
+## Ordenamiento
+```{r}
+library(dslabs)
+data(murders)
+```
+
+Para ordenar usamos sort: 
+```{r}
+sort(murders$total)
+```
+
+la función order, en vez de devolver los valores, devuelve los índices: 
+```{r}
+order(murders$total)
+```
+
+Esta función es muy útil para ordenar una variable en relación con el orden de otra. Por ejemplo: 
+```{r}
+murders$region[order(murders$total)]
+```
+
+Si quiero encontrar el máximo de un vector uso la función max(). Si quiero el índice de un máximo en un vector, uso del wich.max()
+```{r}
+print(max(murders$total))
+print(murders$state[which.max(murders$total)])
+```
+Lo anterior quiere decir que California es el estado con el número máximo de asesinatos: 1257. 
+
+```{r}
+print(min(murders$total))
+print(murders$state[which.min(murders$total)])
+```
+
+Vermont es el estado con menor número total de asesinatos: 2. 
+
+### rankear
+la función rank() te dice en qué lugar, dentro de una lista ordenada, está un valor. En otras palabras, te dice el lugar que ocupó en el concurso de menor valor. 
+
+```{r}
+rank(murders$total)
+
+```
+
+```{r}
+murders$state[order(murders$total)]
+```
+
+## Aritmética con vectores. 
+Podemos aplicar una sola operacion a todos los valores en un vector. Por ejemplo: 
+```{r}
+murders$total - mean(murders$total)
+```
+
+También se pueden aplicar operaciones entre los valores de múltiples vectores del mismo tamaño. por ejemplo: número de asesinatos según la población:
+
+```{r}
+murders$total/murders$population
+```
+Con esta lógica puede obtener la tasa de homicidios cada 100.000 habitantes: 
+```{r}
+tasa <- murders$total/murders$population*100000
+```
+También puedo ordenar los estados según esta tasa: 
+```{r}
+murders$state[order(tasa, decreasing=TRUE)]
+```
+

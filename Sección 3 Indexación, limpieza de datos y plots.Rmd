@@ -1,0 +1,353 @@
+---
+title: "Sección 3 Indexación, limpieza de datos y plots"
+output: html_document
+date: '2022-06-06'
+---
+# Sección 3 Indexación, limpieza de datos y plots
+
+## Idexación
+
+```{r}
+library(dslabs, dplyr)
+data(murders)
+```
+Puedo indexar de acuerdo con operadores lógico, eso me permite seleccionar los casos que cumplan condiciones, de manera flexible. 
+
+Por ejemplo, vamos a seleccionar aquellos estados cuyas tasas de homicidio sean menores que 0.71.
+
+```{r}
+tasa_homicidios <- murders$total/murders$population*100000
+index <- tasa_homicidios < 0.71
+
+murders$state[index]
+```
+
+Aquí nos damos cuenta que los estados con una tasa menor a la mencionada son Hawaii, Iowa, NewHampshire, Dakota del norte y Vermont. 
+
+También podemos elegir con varias condiciones: 
+
+```{r}
+seguro <- tasa_homicidios < 0.71
+occidente <- murders$region== "West"
+index <- seguro & occidente
+murders$state[index]
+```
+
+la función which devuelve los índices de los datos que cumplen con la condición. 
+
+```{r}
+index = which(murders$total < 100)
+murders$state[index]
+```
+
+la función match permite identificar los valores que coinciden con el parámetro especificado. 
+
+```{r}
+index <- match(c("New York", "Florida"), murders$state)
+murders$population[index]
+```
+
+### Operador %in%
+Lo usamos para saber si cada elemento de un vector específico se encuentra en un segundo vector. 
+```{r}
+print("New York" %in% murders$state)
+print("Antioquia" %in% murders$state)
+print("A" %in% murders$state)
+```
+
+## Limpieza básica de datos. 
+
+La librería dplyr facilita mucho este proceso, pues permite funcionalidad intuitiva al trabajar con tablas. 
+```{r}
+library(dplyr)
+```
+
+Dplyr permite usar funciones como mutate, filter y select. También podemos usar el operador pipe %>%
+
+```{r}
+murders <- mutate(murders, rate = murders$total/murders$population*100000)
+```
+
+La función filter permite filtrar de acuerdo con una condición: 
+```{r}
+filter (murders, rate < 0.71)
+```
+
+La función select permite seleccionar sólo las columnas con las que queremos trabajar. 
+
+Mientras filter permitía seleccionar filas, select permite seleccionar columnas. 
+```{r}
+nuevo_df <- select(murders, state, region, rate)
+filter(nuevo_df, rate <= 0.80)
+```
+el %>% permite poner todo lo anterior junto: 
+```{r}
+murders %>% select(state, region, rate) %>% filter(rate < 1)
+```
+
+### Creación de dataframes. 
+Como habíamos visto, es posible crear dataframes con la función data.frames, de la siguiente manera 
+```{r}
+mi_df <- data.frame(nombres = c("Johana", "Paula"),
+                    edades = c(37, 31),
+                    hijos = c(1, 1))
+mi_df
+```
+
+Si las cadenas de texto las convierte en factores, es necesario pasar en Falso el argumento de stringAsFactors:
+```{r}
+mi_df <- data.frame(nombres = c("Johana", "Paula"),
+                    edades = c(37, 31),
+                    hijos = c(1, 1),
+                    stringsAsFactors = FALSE)
+```
+
+Con todo esto, es posible crear nuevos dataframes en los que seleccione, filtre y remueva datos que no necesite. 
+
+Ahora voy a crear un nuevo dataframe en el que considere únicamente los estados menor rankeados como más peligrosos de acuerdo con la tasa de homicidios. 
+```{r}
+mis_estados <- murders %>% mutate(tasa = total/population*100000, ranking = rank(-tasa)) %>% filter (region %in% c("West", "Northeast") & tasa < 1) %>% select(state, region, tasa, ranking)
+mis_estados
+```
+
+## Gráficos
+
+La visualización exploratoria de los datos es quizá la mayor fortaleza de R. 
+La función plot permite, de manera muy sencilla, dibujar un diagrama de dispersión: 
+```{r}
+plot(murders$population/1000000, murders$total)
+```
+
+También se puede dibujar fácilmente un histograma: 
+```{r}
+hist(murders$population/1000000)
+```
+
+También se puede usar fácilmente el boxplot para verificar y comparar datos: 
+
+```{r}
+boxplot(total~region, data=murders)
+```
+
+## resumiendo la data
+Hay dos funciones de dplyr que hace fácil el resumen: group_by y summarize. 
+```{r}
+library(tidyverse)
+```
+
+La función summarize permite crear nuevas tablas con la información de resumen que consideremos más importante. Por ejemplo, en nuestro df de murders vamos a crear una nuva columna que se llame rate, y vamos a crear posteriormente una nueva tabla, que es un dataframe, con la información que deseamos: 
+
+```{r}
+resumen <- murders %>% mutate(tasa = total/population/100000) %>% filter (region == "West" & tasa < 2) %>% 
+  summarize(Mínimo = min(tasa),
+            Mediana = median(tasa), 
+            Media = mean(tasa),
+            Ds = sd(tasa), 
+            Máximo = max(tasa))
+resumen
+```
+
+### Resumiendo con más de un dato. 
+Lo anterior fue un resumen con solo un dato. Ahora vamos a hacerlo con varios.
+La función quantile permite identificar los cuantiles. Para obtener el mínimo, el máximo y la mediana, sólo es pedir los cuantiles 0, 50 y 100. 
+```{r}
+quantile(murders$population, c(0, 0.5, 1))
+```
+
+Esto mismo se puede hacer, con la función summarize: 
+
+```{r}
+murders %>% filter(region == "West") %>% summarize(rango = quantile(population, c(0, 0.5, 1)))
+```
+
+#### la función pull()
+
+Permite obtener un dato o conjunto de datos, como vector, en vez de como dataframe. Hace algo similar al símbolo de dolar. 
+```{r}
+print(class(murders["total"]))
+print(class(murders$total))
+print(class(murders %>% select(total)))
+print(class(murders %>% pull(total)))
+```
+
+#### el placholder punto (.)
+En una secuencia de dplyr permite referirse al dataframe (aunque la mayoría de las veces no es necesario). Esto permite devolver el valor de una variable, no como dataframe, sino como vector. 
+```{r}
+murders %>% select(region, total) %>% .$region
+```
+
+### agrupar y resumir. 
+
+Una de las maneras más útiles de interpretar los datos, es agrupándoles de acuerdo con cierto tipo de variable (la mayoría de veces categórica) Vamos a encontrar la media y desviación estándar para  los asesinatos:
+
+```{r}
+murders %>% group_by(region) %>% summarize (media_asesinatos  = mean(total), 
+                                            desviación_estandar_asesinatos = sd(total),
+                                            mínimo_asesinatos = min(total),
+                                            máximo_asesinatos = max(total), 
+                                            total = sum(total))
+```
+
+#### ordenar: 
+sort y order son útiles para cuando queremos ordenar un vector, pero intentar ordenar una tabla es diferente. Para esto es útil la función arrange(). Por ejemplo, la misma tabla de arriba, requerirá agregarle un arrange. 
+
+```{r}
+murders %>% group_by(region) %>% summarize (media_asesinatos  = mean(total), 
+                                            desviación_estandar_asesinatos = sd(total),
+                                            mínimo_asesinatos = min(total),
+                                            máximo_asesinatos = max(total), 
+                                            total = sum(total)) %>% arrange(media_asesinatos)
+```
+
+##### Orden descendente
+Puedo hacer lo mismo que en la anterior, pero en orden descendiente, pasando la función desc(), dentro de arrange()
+
+```{r}
+murders %>% group_by(region) %>% summarize (media_asesinatos  = mean(total), 
+                                            desviación_estandar_asesinatos = sd(total),
+                                            mínimo_asesinatos = min(total),
+                                            máximo_asesinatos = max(total), 
+                                            total = sum(total)) %>% arrange(desc(media_asesinatos))
+```
+
+también puedo ordenar por diferentes criterios: 
+
+```{r}
+murders %>% arrange(region, desc(total)) %>% head
+```
+Puedo obtener los diez valores más altos con la función top_n(). Esta devuelve los valors más altos (la cantidad definida por número de valores) del dataframe entero, según la variable que se le pase en el segundo argumento. 
+
+```{r}
+murders %>% top_n(15, total)
+```
+
+Estos valores están desorganizados. Si los queremos ordenar, tendremos que pasar el segundo argumento: 
+```{r}
+murders %>% top_n(15, total) %>% arrange(desc(total))
+```
+
+```{r}
+murders %>% arrange(desc(population)) %>% top_n(15, total)
+```
+
+
+## Introducción a data.table
+
+dplyr es fácil para principiantes, pero hay formas más rápidas de hacer los mismo. Una de las formas más populares es data.table. 
+
+```{r}
+library(data.table)
+```
+
+Para trabajar con data.table debemos convertir el df a ese tipo de data, esto se hace con el comando setDT:
+```{r}
+data(murders)
+murders2<-murders
+nueva <- setDT(murders)
+
+
+```
+Esto aparece como una función en el visualizados de variables de Rstudio. 
+
+Para acceder a las variables, se puede hacer similar a como se hace en pandas:
+
+```{r}
+nueva[, c("total", "population")]
+```
+
+Para evitar las comillas, podemos usar el punto antes del paréntesis, así: 
+```{r}
+nueva[, .(total, population)]
+```
+
+Para mutar los datos, podemos definirlas dentro del corchete con el verbo :=  
+```{r}
+nueva[, tasa := total/population*100000]
+nueva
+```
+
+Si queremos generar nuevas columnas, podemos hacer lo mismo que lo anterior, pero poniendo todo dentro de un paréntesis después del verbo de creación de columnas, así: 
+
+```{r}
+nueva[, ":=" (Tasa = total/population*100000, Ranking = rank(tasa))]
+nueva
+
+```
+
+## Filtrar con data.table
+
+Podemos filtrar también de una manera similar a pandas: 
+```{r}
+nueva[Tasa<3, .(region, total, Tasa)]
+```
+
+```{r}
+nueva[Tasa<3 & region == "West", .(region, total, Tasa)]
+```
+
+### resumiendo con data.table
+
+Vamos a usar un nuevo dataset, llamado heights: 
+```{r}
+library(dslabs)
+data("heights")
+heights <-setDT(heights)
+```
+
+En data.table se pueden llamar funciones dentro del punto paréntesis .() Estas funciones serán aplicadas a las columnas. Por ejemplo: 
+
+```{r}
+heights[, .(Promedio_altura = mean(height), DE_altura = sd(height))]
+```
+Ahora hagámoslo con el murders: 
+
+```{r}
+murders[, .(promedio_crímenes = mean(total))]
+```
+ahora vamos a filtrar regiones y obtener el promedio de crímenes: 
+```{r}
+murders[region=="West", .(MediaCrímenesOccidente = mean(total))]
+```
+
+## agrupando con datatable
+
+Es tan fácil como agregar by = (variable categórica)
+
+```{r}
+heights[,mean(height), by = sex]
+```
+
+```{r}
+heights[,.(media_estatura = mean(height)), by = sex]
+```
+
+Ahora con asesinatos: 
+
+```{r}
+murders[, .(Asesinatos_promedio = mean(total), 
+            Número_máximo = max(total),
+            Número_mínimo = min(total)), by = region]
+```
+
+### ordenando datatables
+
+Aquí solo usamos la función order: 
+
+```{r}
+murders[order(population)]
+```
+
+Para ordenar en orden decreciente, se puede usar el operador - sobre la variable, o activar el orden decreciente: 
+
+```{r}
+murders[order(-population)]
+```
+```{r}
+murders[order(population, decreasing = TRUE)]
+```
+
+también se puede hacer ordenamiento anidado: 
+```{r}
+murders[order(region, population, total)]
+```
+
